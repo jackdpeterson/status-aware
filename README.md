@@ -1,16 +1,39 @@
-Status Aware module provides a convenient way to repot on the status of subcomponents within your project.
+Status Aware module 
+====================
 
-Frequently an API has underlying dependencies. Those dependencies can range from internal middleware to third-party APIs.
+## A way to report on the status of your service  and its subcomponents.
 
-Installation:
+The overall goal of this module is to make reporting on the status of sub-components of an API developer-friendly and non-intrusive. It is anticipated that the primary consumer of those data provided by this module would be a user-friendly dashboard or a service like Pingdom.
 
-include 'StatusAware' as a module in the config/application.config.php
+## Stability note
+This module is NOT ready for production. While it probably won't have any major issues ... unit tests have not yet been written. Nor have edge-cases been sorted out when actually using this module.
 
-Within your service classes (that are instantiated with factories from Service Manager) implement the StatusAware\StatusInterface
+## Installation
+
+composer.json require section:
+```
+"jackdpeterson/status-aware" : "dev-master"
+```
+
+Edit config/application.config.php:
+```
+return array (
+    'modules' => array(
+        ...
+        'StatusAware'
+        ...
+    )
+);
+```
 
 
-the response must be an array consisting of the following information
+## Provide status data
 
+1. Create a class that implements the StatusAware\StatusInterface interface.
+2. Figure out how you will check for status of the component in question (e.g., a CURL call w/ ***TIMEOUTS FOR FAILURE HANDLING***
+3. return an array like so:
+
+```
 public function getServiceStatus() {
 	return array(
 		'name' => 'something identifiable',
@@ -19,14 +42,22 @@ public function getServiceStatus() {
 		'message' => ''
 	);
 }
+```
+
+### reserved fields and their formats in the response array:
+```
+'name' => (string) that helps you identify the service/component in question
+'status' => (string) 'up','down','degraded'
+'is_critical' => (boolean) Is this functionality critical to your API? If down then the overall status will be 'down'. 
+'message' => '' => if 'up', the message is expected to be blank, ''. Otherwise it is assumed that you will provide a useful debugging message about the condition of soft-failure or hard-failure.
+```
 
 
-Formatting your response:
-'name' => Something that you can understand what is down (e.g., search_service, or redis)
-'status' => 'up','down','degraded', <==
-'is_critical' => boolean. Is this functionality critical to your API? 
-'message' => '', <== if up, the message is ''. Otherwise it is assumed that your service will provide useful information for diagnostic purposes.
- 
- 
- Critical things to keep in mind:
- --> set timeouts on your responses otherwise if something is down ... it may not return anything!
+#### Providing additional status data
+You can certainly provide more information in the getServiceStatus() array like stack traces ... so long as you cast the data as a string.
+
+## Get status data
+perform an HTTP GET request to /status will respond with JSON data about the status.
+
+## Important and worth re-emphasizing:
+ Set timeouts on your responses and handle exceptions. Otherwise if something is down ... this may not return anything!
