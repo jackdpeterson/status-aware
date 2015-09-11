@@ -6,7 +6,7 @@
         "zendframework/zendframework" : ">=2.3.2,<3.0.0"
     },
     "type": "library",
-    "keywords": "API Status aggregator, status provider, apigility",
+    "keywords": ["API Status aggregator","status provider", "apigility"],
     "authors": [
 		{
 			"name": "Jack Peterson"
