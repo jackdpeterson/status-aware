@@ -1,0 +1,8 @@
+{
+    "name": "jackdpeterson/StatusAware",
+    "description": "Return an aggregated status of underlying services with some debugging information. Useful for API dashboards",
+    "require": {
+        "php": ">=5.3.0",
+        "zendframework/zendframework" : ">=2.3.2,<3.0.0"
+    }
+}
