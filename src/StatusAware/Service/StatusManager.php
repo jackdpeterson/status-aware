@@ -50,13 +50,19 @@ class StatusManager
     protected function loadStatusResponses()
     {
         if (count($this->_statusResponseCollection) == 0) {
-            $out = array();
+            $out = array(
+                'status' => 'up',
+                'components' => array(),
+                'message' => ''
+            );
             foreach ($this->_statusReportingClassList as $key => $classObj) {
                 try {
                     $response = $classObj->getServiceStatusAsArr();
-                    $out[] = $response;
+                    $out['components'][] = $response;
                 } catch (\Exception $e) {
-                    $out[] = array(
+                    $out['status'] = 'degraded';
+                    $out['message'] = 'at least one status providing service threw an exception.';
+                    $out['components'][get_class($classObj)] = array(
                         'status' => 'down',
                         'message' => 'Exception detected while fetching status: ' . $e->getMessage()
                     );
@@ -74,7 +80,7 @@ class StatusManager
      */
     protected function AreAnyCriticalServicesDown()
     {
-        foreach ($this->_statusResponseCollection as $key => $classObjResponse) {
+        foreach ($this->_statusResponseCollection['components'] as $key => $classObjResponse) {
             if (array_key_exists('is_critical', $classObjResponse) && $classObjResponse['is_critical'] == true) {
                 if (array_key_exists('status', $classObjResponse) && strtolower($classObjResponse['status']) == 'down') {
                     return true;
@@ -92,7 +98,7 @@ class StatusManager
      */
     protected function areAnyCriticalServicesDegraded()
     {
-        foreach ($this->_statusResponseCollection as $key => $classObjResponse) {
+        foreach ($this->_statusResponseCollection['components'] as $key => $classObjResponse) {
             if (array_key_exists('is_critical', $classObjResponse) && $classObjResponse['is_critical'] == true) {
                 if (array_key_exists('status', $classObjResponse) && strtolower($classObjResponse['status']) == 'degraded') {
                     return true;
@@ -110,7 +116,7 @@ class StatusManager
      */
     protected function areAnyServicesDown()
     {
-        foreach ($this->_statusResponseCollection as $key => $classObjResponse) {
+        foreach ($this->_statusResponseCollection['components'] as $key => $classObjResponse) {
             if (array_key_exists('status', $classObjResponse) && strtolower($classObjResponse['status']) === 'down') {
                 return true;
             }
@@ -126,7 +132,7 @@ class StatusManager
      */
     protected function areAnyServicesDegraded()
     {
-        foreach ($this->_statusResponseCollection as $key => $classObjResponse) {
+        foreach ($this->_statusResponseCollection['components'] as $key => $classObjResponse) {
             if (array_key_exists('status', $classObjResponse) && strtolower($classObjResponse['status']) === 'degraded') {
                 return true;
             }
@@ -159,12 +165,7 @@ class StatusManager
      */
     public function getStatus()
     {
-        $this->loadStatusResponses();
-        $responseArray = array(
-            'status' => 'up',
-            'components' => array(),
-            'message' => ''
-        );
+        $responseArray = $this->loadStatusResponses();
         
         if ($this->areAnyServicesDegraded()) {
             $responseArray['status'] = 'degraded';
@@ -185,8 +186,6 @@ class StatusManager
             $responseArray['status'] = 'down';
             $responseArray['message'] = 'at least one critical service is down.';
         }
-        
-        $responseArray['components'] = $this->getComponentStatusAsArray();
         
         return $responseArray;
     }
